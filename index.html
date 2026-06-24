@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)file:///C:/Users/killy1/Downloads/l10n_analyzer_stable_v4_6.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L10N Match</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f0f1f5;
+    --surface:   #ffffff;
+    --surface2:  #f6f7fa;
+    --surface3:  #eceef4;
+    --border:    #e3e5ee;
+    --border2:   #c8ccdb;
+    --text:      #0e1016;
+    --text2:     #3a3f55;
+    --text3:     #909ab5;
+    --accent:    #5c6ac4;
+    --accent-fg: #ffffff;
+    --accent-bg: #eef0fb;
+    --shadow-xs: 0 1px 2px rgba(14,16,22,0.05);
+    --shadow-sm: 0 2px 8px rgba(14,16,22,0.07), 0 1px 2px rgba(14,16,22,0.04);
+    --shadow-md: 0 6px 20px rgba(14,16,22,0.09), 0 2px 6px rgba(14,16,22,0.05);
+    --shadow-lg: 0 12px 36px rgba(14,16,22,0.12), 0 4px 10px rgba(14,16,22,0.06);
+    --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 22px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── 페이지 상단 컬러 바 ── */
+  body::before {
+    content: ''; display: block; height: 3px;
+    background: linear-gradient(90deg, #5c6ac4 0%, #8b5cf6 50%, #ec4899 100%);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  }
+
+  .wrap {
+    max-width: 1200px; margin: 0 auto;
+    padding: 48px 32px 80px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; }
+  h2 { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.1px; }
+  .subtitle { font-size: 13px; color: var(--text3); margin-top: 3px; }
+
+  /* ── 헤더 ── */
+  .page-header { display: flex; align-items: center; gap: 16px; }
+  .page-logo {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    background: linear-gradient(135deg, #5c6ac4 0%, #7c3aed 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(92,106,196,0.35);
+  }
+  .page-logo svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── 기준 데이터 바 ── */
+  .ref-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; padding: 0 2px;
+  }
+  .ref-bar-left { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text3); }
+  .ref-bar-icon { display: flex; align-items: center; opacity: 0.45; }
+  .ref-bar.ref-bar-custom .ref-bar-left { color: #16a34a; }
+  .ref-bar.ref-bar-custom .ref-bar-icon { opacity: 0.7; color: #16a34a; }
+  .ref-bar-right { display: flex; align-items: center; gap: 6px; }
+
+  /* ── 탑바 ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  .tab-group {
+    display: flex; gap: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 3px;
+    box-shadow: var(--shadow-xs);
+  }
+  .tab-btn {
+    padding: 7px 22px; border-radius: 7px; border: none; background: none;
+    font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text3);
+    transition: all 0.15s; font-family: inherit; letter-spacing: -0.1px;
+  }
+  .tab-btn.active {
+    background: var(--accent); color: #fff; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(92,106,196,0.3);
+  }
+  .tab-btn:not(.active):hover { background: var(--surface2); color: var(--text2); }
+
+  .lang-select-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
+  select {
+    border: 1px solid var(--border); border-radius: var(--r-xs);
+    padding: 7px 30px 7px 12px; font-size: 13px;
+    background: var(--surface); cursor: pointer; color: var(--text);
+    font-family: inherit; appearance: none; outline: none;
+    box-shadow: var(--shadow-xs);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23909ab5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+    transition: border-color 0.13s;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* ── IP 소스 필터 ── */
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn {
+    font-size: 12px; font-weight: 500; padding: 5px 13px;
+    border-radius: 99px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; color: var(--text3);
+    font-family: inherit; transition: all 0.13s; box-shadow: var(--shadow-xs);
+  }
+  .filter-btn:hover { border-color: var(--border2); color: var(--text2); }
+  .filter-btn.active {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent); font-weight: 600;
+    box-shadow: 0 2px 8px rgba(92,106,196,0.25);
+  }
+
+  /* ── 패널 ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 28px 30px;
+    display: flex; flex-direction: column; gap: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── 검색 ── */
+  .search-wrap { position: relative; }
+  .search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--text3);
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.12s; cursor: default; z-index: 1;
+  }
+  .search-icon svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .search-icon.has-text { cursor: pointer; color: var(--text3); pointer-events: auto; }
+  .search-icon.has-text:hover { color: var(--text2); }
+  .search-input { padding-left: 42px !important; }
+
+  input[type=text] {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: var(--r-md); padding: 13px 16px;
+    font-size: 15px; color: var(--text); background: var(--surface2);
+    outline: none; transition: all 0.15s; font-family: inherit; font-weight: 400;
+  }
+  input[type=text]:focus {
+    border-color: var(--accent); background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(92,106,196,0.12);
+  }
+  input[type=text].search-input { padding-left: 44px; }
+
+  textarea {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: var(--r-md); padding: 14px 16px;
+    font-size: 14px; color: var(--text); background: var(--surface2);
+    outline: none; transition: all 0.15s; font-family: inherit;
+    resize: vertical; min-height: 130px; line-height: 1.75;
+  }
+  textarea:focus {
+    border-color: var(--accent); background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(92,106,196,0.12);
+  }
+  input[type=file] { display: none; }
+
+  /* ── 배지 ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; font-weight: 600;
+    padding: 3px 9px; border-radius: 99px; white-space: nowrap;
+    letter-spacing: 0.1px; border: 1px solid transparent;
+  }
+  .badge-green  { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+  .badge-amber  { background: #fef9c3; color: #a16207; border-color: #fde047; }
+  .badge-red    { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+  .badge-gray   { background: var(--surface3); color: var(--text2); border-color: var(--border); }
+
+  .source-tag {
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 2px 8px; border-radius: 20px;
+    background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(92,106,196,0.2);
+  }
+  .source-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .tab-desc { font-size: 12.5px; color: var(--text3); margin: 0 0 18px; line-height: 1.6; }
+
+  /* ── 결과 카드 ── */
+  .result-card {
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    padding: 22px 24px; cursor: pointer;
+    transition: all 0.18s; background: var(--surface);
+    box-shadow: var(--shadow-xs);
+  }
+  .result-card:hover {
+    border-color: var(--border2);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .result-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(92,106,196,0.15), var(--shadow-sm);
+  }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+  .card-original-label {
+    font-size: 10px; color: var(--text3); margin-bottom: 6px;
+    letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600;
+  }
+  .card-original-text { font-size: 19px; font-weight: 700; word-break: break-word; letter-spacing: -0.4px; line-height: 1.3; }
+  .card-query-text { font-size: 12px; color: var(--text3); margin-top: 5px; }
+
+  .lang-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .lang-cell {
+    border-radius: var(--r-sm); padding: 14px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.13s;
+  }
+  .lang-cell:hover { border-color: var(--border2); }
+  .lang-cell-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .lang-code {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    background: var(--surface3); border-radius: 4px; padding: 2px 6px;
+  }
+  .lang-value { font-size: 14px; color: var(--text); word-break: break-word; min-height: 20px; line-height: 1.55; }
+
+  .copy-btn {
+    font-size: 11.5px; padding: 4px 10px; border-radius: var(--r-xs);
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; color: var(--text3);
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: inherit; font-weight: 500;
+    transition: all 0.13s; box-shadow: var(--shadow-xs);
+  }
+  .copy-btn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .copy-btn:hover { background: var(--surface3); border-color: var(--border2); color: var(--text2); }
+  .copy-btn.copied { color: #15803d; border-color: #bbf7d0; background: #dcfce7; }
+
+  /* ── 인라인 상세 (카드 하단 컴팩트 라인) ── */
+  .card-detail-footer {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .reason-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ── 요약 카드 ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; }
+  .summary-card {
+    border-radius: var(--r-md); padding: 20px 22px;
+    border: 1px solid var(--border); background: var(--surface);
+    box-shadow: var(--shadow-xs);
+  }
+  .summary-label { font-size: 10.5px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .summary-num { font-size: 36px; font-weight: 700; margin-top: 6px; letter-spacing: -2px; color: var(--text); line-height: 1; }
+  .summary-card.reusable  .summary-num { color: #16a34a; }
+  .summary-card.reference .summary-num { color: #d97706; }
+  .summary-card.new       .summary-num { color: #dc2626; }
+
+  /* ── 툴바 ── */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .toolbar-left { font-size: 12.5px; color: var(--text3); }
+  .toolbar-right { display: flex; gap: 8px; }
+
+  .icon-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 500; padding: 7px 14px;
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    background: var(--surface); cursor: pointer; color: var(--text2);
+    font-family: inherit; transition: all 0.13s; box-shadow: var(--shadow-xs);
+  }
+  .icon-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); box-shadow: var(--shadow-sm); }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+  /* ── 섹션 헤더 ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; }
+  .section-count { font-size: 12px; color: var(--text3); font-weight: 500; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  #batch-results-section { display: flex; flex-direction: column; gap: 28px; }
+  .batch-results-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .batch-subsection { display: flex; flex-direction: column; gap: 10px; }
+  .batch-subsection-title {
+    font-size: 11.5px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.4px; text-transform: uppercase;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* ── 테이블 ── */
+  .table-wrap {
+    border: 1px solid var(--border); border-radius: var(--r-md);
+    overflow: hidden; box-shadow: var(--shadow-xs);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; table-layout: fixed; }
+  thead { background: var(--surface2); }
+  th {
+    padding: 11px 16px; text-align: left; font-weight: 600;
+    font-size: 10.5px; color: var(--text3); letter-spacing: 0.6px;
+    text-transform: uppercase; border-bottom: 1px solid var(--border);
+  }
+  td { padding: 14px 16px; vertical-align: top; border-top: 1px solid var(--border); word-break: break-word; }
+  tr { cursor: pointer; transition: background 0.1s; }
+  tr:hover td { background: var(--surface2); }
+  tr.selected td { background: var(--accent-bg); }
+  .table-detail-row td { padding: 0; background: var(--surface2); }
+  .table-detail-inner { padding: 4px 16px 16px; }
+  th.col-no   { width: 48px; }
+  th.col-orig { width: 24%; }
+  th.col-lang { width: calc((100% - 48px - 24%) / 3); }
+
+  /* ── 빈 상태 ── */
+  .empty {
+    padding: 52px 32px; text-align: center; color: var(--text3);
+    font-size: 13.5px; line-height: 1.7;
+  }
+  .empty::before {
+    content: ''; display: none;
+  }
+
+  /* ── 토스트 ── */
+  #toast {
+    position: fixed; bottom: 36px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--text); color: #fff;
+    padding: 10px 22px; border-radius: var(--r-md);
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; z-index: 9999;
+    box-shadow: var(--shadow-lg);
+    letter-spacing: -0.1px;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-header">
+    <div class="page-logo">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="22" y2="22"></line></svg>
+    </div>
+    <div>
+      <h1>L10N Match</h1>
+      <p class="subtitle">기존 번역 재사용 가능성을 판단합니다</p>
+    </div>
+  </div>
+
+  <!-- 기준 데이터 상태 바 -->
+  <div class="ref-bar" id="ref-bar">
+    <div class="ref-bar-left">
+      <span class="ref-bar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"></path></svg>
+      </span>
+      <span id="ref-status">기준 데이터 로드 중...</span>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="tab-group">
+      <button class="tab-btn active" id="tab-single" onclick="switchMode(&#39;single&#39;)">문구 검색</button>
+      <button class="tab-btn" id="tab-batch" onclick="switchMode(&#39;batch&#39;)">목록 검색</button>
+    </div>
+    <div class="lang-select-wrap">
+      <span>검색 언어</span>
+      <select id="base-lang" onchange="onLangChange()">
+        <option value="ko">한국어</option>
+        <option value="en">영어</option>
+        <option value="zh-TW">중국어</option>
+        <option value="ja">일본어</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- IP 소스 필터 (소스가 2개 이상일 때만 표시) -->
+  <div id="source-filter-wrap" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;font-weight:500;letter-spacing:0.2px">IP 필터</span>
+      <div class="filter-group" id="source-filter-group"></div>
+    </div>
+  </div>
+
+  <!-- Single panel -->
+  <div class="panel" id="single-panel">
+    <p class="tab-desc">번역 요청 문구를 하나씩 입력해 재사용 가능한 번역을 확인합니다. 유사도 순으로 <strong>모든 후보</strong>가 표시됩니다.</p>
+    <div class="search-wrap">
+      <span class="search-icon" id="search-icon-btn" onclick="clearSearch()">
+        <svg id="search-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="22" y2="22"></line></svg>
+      </span>
+      <input type="text" class="search-input" id="single-input" placeholder="문구를 입력하세요" oninput="toggleSearchIcon(this); renderSingle()">
+    </div>
+    <div id="single-results"></div>
+  </div>
+
+  <!-- Batch panel -->
+  <div class="panel" id="batch-panel" style="display:none">
+    <p class="tab-desc">번역 요청 목록을 한번에 업로드해 전체 현황을 파악하고 결과를 CSV로 내려받습니다. 항목별로 <strong>가장 유사한 번역 1건</strong>을 자동 매칭합니다.</p>
+    <div id="batch-summary"></div>
+
+    <textarea id="batch-input" placeholder="번역 요청 문구를 한 줄에 하나씩 입력하세요.
+• 아무 양식 없는 엑셀/CSV 파일을 업로드하면 첫 번째 컬럼을 자동으로 읽어옵니다.
+• '원문(KO)' 컬럼이 포함된 양식의 파일을 업로드하면 '원문(KO)' 컬럼을 자동으로 읽어옵니다.
+• 그 외 양식이 있는 경우 오류가 발생할 수 있습니다." oninput="renderBatch()"></textarea>
+
+    <div class="toolbar">
+      <div class="toolbar-left" id="batch-upload-info">목록을 업로드하거나 직접 입력하세요.</div>
+      <div class="toolbar-right">
+        <input type="file" id="batch-file" accept=".xlsx,.xls,.csv,.txt,.tsv" onchange="handleBatchUpload(event)">
+        <button class="icon-btn" onclick="document.getElementById(&#39;batch-file&#39;).click()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          분석 대상 업로드
+        </button>
+        <button class="icon-btn" id="csv-btn" onclick="downloadResult()" disabled="">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          결과 다운로드
+        </button>
+      </div>
+    </div>
+
+    <div id="batch-results-section" style="display:none">
+      <hr class="divider">
+
+      <div class="batch-results-header">
+        <div>
+          <h2 style="font-size:14px">검색 결과</h2>
+          <p class="subtitle" style="margin-top:3px">단어/라벨은 테이블로, 문장/메시지는 카드로 표시합니다.</p>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" id="filter-all" onclick="setFilter(&#39;all&#39;)">전체</button>
+          <button class="filter-btn" id="filter-usable" onclick="setFilter(&#39;usable&#39;)">재사용 가능</button>
+          <button class="filter-btn" id="filter-needs" onclick="setFilter(&#39;needs&#39;)">참고 가능 / 신규</button>
+        </div>
+      </div>
+
+      <div class="batch-subsection">
+        <div class="batch-subsection-title">
+          <span>단어 / 라벨</span>
+          <span id="term-count">0건</span>
+        </div>
+        <div id="term-results"></div>
+      </div>
+
+      <div class="batch-subsection">
+        <div class="batch-subsection-title">
+          <span>문장 / 메시지</span>
+          <span id="sentence-count">0건</span>
+        </div>
+        <div id="sentence-results"></div>
+      </div>
+    </div><!-- /batch-results-section -->
+  </div>
+</div>
+
+<div id="toast">복사했습니다</div>
+
+<script>
+// ─── 기준 데이터 ────────────────────────────────────────────────────────────────
+const SAMPLE_DATA = [
+  { key: 'COMMON.BTN.CONFIRM', type: 'CTA', usage: 12, source: 'Common', ko: '확인', en: 'Confirm', 'zh-TW': '確認', ja: '確認' },
+  { key: 'EVENT.PERIOD', type: 'LABEL', usage: 5, source: 'Project-A', ko: '이벤트 기간', en: 'Event Period', 'zh-TW': '活動期間', ja: 'イベント期間' },
+  { key: 'EVENT.TITLE', type: 'TERM', usage: 7, source: 'Project-A', ko: '이벤트', en: 'Event', 'zh-TW': '活動', ja: 'イベント' },
+  { key: 'COMMON.NOTICE.CONFIRM_REQUIRED', type: 'NOTICE', usage: 3, source: 'Common', ko: '확인해주세요', en: 'Please check', 'zh-TW': '請確認', ja: 'ご確認ください' },
+  { key: 'LABEL.CONFIRM_TARGET', type: 'LABEL', usage: 2, source: 'Project-B', ko: '확인 대상', en: 'Target to confirm', 'zh-TW': '', ja: '' },
+  { key: 'ERROR.NETWORK', type: 'ERROR', usage: 9, source: 'Common', ko: '네트워크 오류가 발생했습니다', en: 'Network error occurred', 'zh-TW': '發生網路錯誤', ja: 'ネットワークエラーが発生しました' },
+  { key: 'CTA.JOIN', type: 'CTA', usage: 4, source: 'Project-A', ko: '지금 참여하기', en: 'Join Now', 'zh-TW': '立即參與', ja: '今すぐ参加' },
+  { key: 'PROMOTION.WELCOME', type: 'MESSAGE', usage: 6, source: 'Project-B', ko: '이벤트에 참여해 주셔서 감사합니다', en: 'Thank you for joining the event', 'zh-TW': '感謝您參與活動', ja: 'イベントにご参加いただきありがとうございます' },
+  { key: 'COMMON.BTN.CANCEL', type: 'CTA', usage: 10, source: 'Common', ko: '취소', en: 'Cancel', 'zh-TW': '取消', ja: 'キャンセル' },
+  { key: 'LABEL.CARD_VIEW', type: 'LABEL', usage: 3, source: 'Project-B', ko: '카드보기', en: 'Card View', 'zh-TW': '卡片檢視', ja: 'カード表示' },
+];
+
+// 실제 검색에 사용되는 데이터 (localStorage 로드 또는 샘플)
+let DATA = [...SAMPLE_DATA];
+
+const LANGS = [
+  { code: 'ko', label: '한국어' },
+  { code: 'en', label: '영어' },
+  { code: 'zh-TW', label: '중국어' },
+  { code: 'ja', label: '일본어' },
+];
+
+// ─── 상태 ─────────────────────────────────────────────────────────────────────
+let mode = 'single';
+let baseLang = 'ko';
+let globalFilter = 'all';
+let activeSource = null; // null = 전체 IP
+let selectedId = null;
+let batchRows = [];
+let batchMeta  = []; // 익스트랙터 xlsx 원본 행 데이터 (원문 외 메타 보존용)
+
+// ─── 검색 정규화 (원본 데이터는 절대 변형하지 않음) ─────────────────────────
+function normalizeForSearch(text) {
+  return String(text || '')
+    .trim()
+    .toLowerCase()
+    .split('_').join(' ')
+    .split('.').join(' ')
+    .split('-').join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// 공백을 완전히 제거한 비교용 문자열 (띄어쓰기 오타 대응)
+// 원본 표시에는 절대 사용하지 않음
+function collapseSpaces(text) {
+  return normalizeForSearch(text).replace(/\s/g, '');
+}
+
+// ─── Bigram Jaccard 유사도 ───────────────────────────────────────────────────
+// 두 문자열을 2글자씩 쪼개서 겹치는 비율을 계산
+// 예: '확인해주세요' / '확인해주셔서 감사합니다'
+//   → bigram A: {확인, 인해, 해주, 주세, 세요}
+//   → bigram B: {확인, 인해, 해주, 주셔, 셔서, 서 감, ...}
+//   → 교집합: {확인, 인해, 해주} → Jaccard = 3 / (5+8-3) = 0.3
+function bigramJaccard(a, b) {
+  // 3글자 미만이면 계산 의미 없음 (단어 단위 오탐 방지)
+  if (a.length < 3 || b.length < 3) return 0;
+
+  // 한국어 문장 종결어미 제거 (었습니다/됩니다/합니다 등이 bigram을 오염시키는 것 방지)
+  const stripEndings = s => s.replace(/[었됩합있없]습니다/g, '').replace(/[이]?[습]니다/g, '').replace(/[었했됐]어요/g, '').replace(/[으]?세요/g, '').replace(/니다/g, '').replace(/습니/g, '');
+
+  function toBigrams(str) {
+    const set = new Set();
+    const s = stripEndings(str).replace(/\s/g, ''); // 종결어미 + 공백 제거 후 bigram
+    for (let i = 0; i < s.length - 1; i++) set.add(s[i] + s[i + 1]);
+    return set;
+  }
+
+  const setA = toBigrams(a);
+  const setB = toBigrams(b);
+  if (!setA.size || !setB.size) return 0;
+
+  let intersection = 0;
+  setA.forEach(gram => { if (setB.has(gram)) intersection++; });
+  const union = setA.size + setB.size - intersection;
+  return union > 0 ? intersection / union : 0;
+}
+
+// ─── IP 소스 필터 ────────────────────────────────────────────────────────────
+function getFilteredData() {
+  if (!activeSource) return DATA;
+  return DATA.filter(item => String(item.source || '') === activeSource);
+}
+
+function renderSourceFilters() {
+  const sources = [...new Set(DATA.map(item => String(item.source || '')).filter(Boolean))].sort();
+  const wrap = document.getElementById('source-filter-wrap');
+  const group = document.getElementById('source-filter-group');
+  if (sources.length <= 1) {
+    wrap.style.display = 'none';
+    activeSource = null;
+    return;
+  }
+  wrap.style.display = '';
+  const allBtn = `<button class="filter-btn ${!activeSource ? 'active' : ''}" onclick="setSourceFilter(null)">전체 IP</button>`;
+  const srcBtns = sources.map(s =>
+    `<button class="filter-btn ${activeSource === s ? 'active' : ''}" data-src="${esc(s)}" onclick="setSourceFilter(this.dataset.src)">${esc(s)}</button>`
+  ).join('');
+  group.innerHTML = allBtn + srcBtns;
+}
+
+function setSourceFilter(source) {
+  activeSource = activeSource === source ? null : source;
+  renderSourceFilters();
+  selectedId = null;
+  if (mode === 'single') renderSingle();
+  else renderBatch();
+}
+
+
+// ─── 매칭 로직 ───────────────────────────────────────────────────────────────
+function scoreCandidate(input, item, lang) {
+  const raw = String(input || '').trim();
+  const candidate = String(item[lang] || '').trim();
+  if (!raw || !candidate) return null;
+
+  const a = normalizeForSearch(raw);
+  const b = normalizeForSearch(candidate);
+  const k = normalizeForSearch(item.key || '');
+
+  // 공백 제거 비교용 (띄어쓰기 무시)
+  const ac = collapseSpaces(raw);
+  const bc = collapseSpaces(candidate);
+
+  if (raw === candidate)
+    return { status: '재사용 가능', score: 300, reasons: ['완전 일치'] };
+  if (a === b)
+    return { status: '재사용 가능', score: 220, reasons: ['검색 정규화 일치'] };
+  // 띄어쓰기만 다르고 나머지는 같은 경우
+  if (ac && bc && ac === bc)
+    return { status: '재사용 가능', score: 200, reasons: ['띄어쓰기 차이'] };
+  if (k && (a === k || k.includes(a) || a.includes(k)))
+    return { status: '참고 가능', score: 110, reasons: ['key 유사 매칭'] };
+  // 부분 포함: 짧은 쪽이 긴 쪽의 40% 이상일 때만 유효 (단어 1개가 긴 문장 안에 들어있는 경우 제외)
+  if (b.includes(a) || a.includes(b)) {
+    const ratio = Math.min(a.length, b.length) / Math.max(a.length, b.length);
+    if (ratio >= 0.4) return { status: '참고 가능', score: 90, reasons: ['부분 포함'] };
+  }
+  // 공백 제거 후 부분 포함
+  if (ac.length >= 2 && bc.length >= 2 && (bc.includes(ac) || ac.includes(bc))) {
+    const ratio = Math.min(ac.length, bc.length) / Math.max(ac.length, bc.length);
+    if (ratio >= 0.4) return { status: '참고 가능', score: 70, reasons: ['띄어쓰기 무시 부분 포함'] };
+  }
+
+  // Bigram Jaccard 유사도 (앞 단계에서 못 잡은 유사 문자열 포착)
+  // 0.5 이상: 절반 이상 겹침 → 참고할 가치 있음
+  // 0.25 이상: 일부 겹침 → 약한 참고
+  // 0.25 미만: 노이즈로 판단, 무시
+  const jaccard = bigramJaccard(a, b);
+  if (jaccard >= 0.5)
+    return { status: '참고 가능', score: Math.round(50 + jaccard * 30), reasons: ['문자 유사도 높음 (' + Math.round(jaccard * 100) + '%)'] };
+  if (jaccard >= 0.25)
+    return { status: '참고 가능', score: Math.round(20 + jaccard * 30), reasons: ['문자 유사도 (' + Math.round(jaccard * 100) + '%)'] };
+
+  return null;
+}
+
+function getAllCandidates(text, lang) {
+  return getFilteredData().map(item => {
+    const r = scoreCandidate(text, item, lang);
+    return r ? { item, ...r } : null;
+  }).filter(Boolean).sort((a, b) => b.score - a.score);
+}
+
+function findBest(text, lang) {
+  return getAllCandidates(text, lang)[0] || null;
+}
+
+// ─── 입력 정리 (검색 기준값 추출용, 원본 표시는 따로) ─────────────────────
+function stripInput(line) {
+  const text = String(line || '').trim();
+  // 탭 또는 쉼표 구분 시 첫 번째 컬럼만 사용
+  const firstCol = text.includes('\t')
+    ? text.split('\t')[0]
+    : text.includes(',') && !isQuotedCsv(text)
+      ? text.split(',')[0]
+      : text;
+  return firstCol
+    .replace(/^[-*•]\s*/, '')   // 불릿 제거
+    .replace(/^\d+[.)]\s*/, '') // 번호 제거
+    .trim();
+}
+
+function isQuotedCsv(text) {
+  return text.trimStart().startsWith('"');
+}
+
+function parseBatch(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((line, i) => ({ id: i, raw: line.trim(), text: stripInput(line) }))
+    .filter(row => row.text);
+}
+
+// ─── 분류 ────────────────────────────────────────────────────────────────────
+function isSentence(text) {
+  const v = String(text || '').trim();
+  if (v.length >= 15) return true;
+  if (v.split(/\s+/).filter(Boolean).length >= 3) return true;
+  return ['습니다', '해주세요', '없습니다', '가능합니다', '참여하세요', '감사합니다'].some(w => v.includes(w));
+}
+
+function langStatus(value, rowStatus) {
+  if (!value) return '신규 번역 필요';
+  return rowStatus === '재사용 가능' ? '재사용 가능' : '참고 가능';
+}
+
+function isFullyUsable(row, lang) {
+  const targets = LANGS.filter(l => l.code !== lang);
+  return targets.every(l => row.match && row.match[l.code] && row.status === '재사용 가능');
+}
+
+// ─── 결과 다운로드 (xlsx) ────────────────────────────────────────────────────
+function downloadResult() {
+  if (!batchRows.length) return;
+
+  const lookup = {};
+  batchRows.forEach(r => { lookup[r.metaIndex] = r; });
+
+  let outputRows, sheetName, filename;
+
+  if (batchMeta.length) {
+    const exHeader = Object.keys(batchMeta[0]);
+    const findCol  = (...keywords) => exHeader.find(h => keywords.some(k => h.includes(k)));
+    const zhCol  = findCol('ZH', 'zh', '중국어');
+    const enCol  = findCol('EN', '영어');
+    const jaCol  = findCol('JA', 'ja', '일본어');
+    const bizCol = findCol('비고');
+
+    sheetName  = 'L10N요청';
+    filename   = 'L10N_Result.xlsx';
+    outputRows = [exHeader];
+
+    batchMeta.forEach((meta, i) => {
+      const br  = lookup[i];
+      const row = exHeader.map(h => meta[h] || '');
+      if (br?.match && br.status === '재사용 가능') {
+        if (zhCol)  row[exHeader.indexOf(zhCol)]  = br.match['zh-TW'] || '';
+        if (enCol)  row[exHeader.indexOf(enCol)]  = br.match['en']    || '';
+        if (jaCol)  row[exHeader.indexOf(jaCol)]  = br.match['ja']    || '';
+        if (bizCol) {
+          const prev = meta[bizCol] ? meta[bizCol] + ' / ' : '';
+          row[exHeader.indexOf(bizCol)] = prev + '재사용 가능 · ' + (br.match.key || '');
+        }
+      } else if (br?.match && br.status === '참고 가능') {
+        if (bizCol) {
+          const prev = meta[bizCol] ? meta[bizCol] + ' / ' : '';
+          row[exHeader.indexOf(bizCol)] = prev + '참고 가능 · ' + (br.match.key || '');
+        }
+      }
+      outputRows.push(row);
+    });
+
+  } else {
+    const targets = LANGS.filter(l => l.code !== baseLang);
+    sheetName  = 'L10N Match 결과';
+    filename   = 'L10N_Result.xlsx';
+    outputRows = [['No', '원문(KO)', ...targets.map(l => l.label + '(' + l.code + ')'), '매칭상태', '매칭키']];
+    batchRows.forEach((br, i) => {
+      const langVals = targets.map(l =>
+        (br.match && br.status === '재사용 가능') ? (br.match[l.code] || '') : ''
+      );
+      outputRows.push([i + 1, br.text, ...langVals, br.status, br.match?.key || '']);
+    });
+  }
+
+  const wb    = XLSX.utils.book_new();
+  const ws    = XLSX.utils.aoa_to_sheet(outputRows);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob  = new Blob([wbout], { type: 'application/octet-stream' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── 파일 업로드 (Batch 분석 대상) ───────────────────────────────────────────
+async function handleBatchUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const info = document.getElementById('batch-upload-info');
+  try {
+    let text = '';
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+      const header = (rawRows[0] || []).map(h => String(h || '').trim());
+      const koIdx  = header.findIndex(h => h.includes('원문'));
+
+      if (koIdx >= 0) {
+        // 익스트랙터 형식: 원문(KO) 컬럼 인식 + 메타 전체 보존
+        const dataRows = rawRows.slice(1).filter(r => String(r[koIdx] || '').trim());
+        batchMeta = dataRows.map(r => {
+          const obj = {};
+          header.forEach((h, i) => { obj[h] = String(r[i] ?? '').trim(); });
+          return obj;
+        });
+        text = batchMeta.map(m => m[header[koIdx]] || '').filter(Boolean).join('\n');
+      } else {
+        // 일반 형식: 첫 번째 비어있지 않은 셀 사용
+        batchMeta = [];
+        text = rawRows.map(row => {
+          if (!Array.isArray(row)) return '';
+          const cell = row.find(c => String(c || '').trim());
+          return cell ? String(cell).trim() : '';
+        }).filter(Boolean).join('\n');
+      }
+    } else {
+      batchMeta = [];
+      text = await file.text();
+    }
+    document.getElementById('batch-input').value = text;
+    renderBatch();
+    info.textContent = file.name + ' 업로드 완료 · ' + parseBatch(text).length + '건 인식';
+  } catch (e) {
+    console.error(e);
+    info.textContent = '파일을 읽지 못했습니다. 엑셀/CSV/TXT 형식을 확인해 주세요.';
+  } finally {
+    event.target.value = '';
+  }
+}
+
+// ─── 배지 HTML ────────────────────────────────────────────────────────────────
+function statusBadge(status) {
+  if (status === '재사용 가능') return '<span class="badge badge-green">재사용 가능</span>';
+  if (status === '참고 가능')   return '<span class="badge badge-amber">참고 가능</span>';
+  return '<span class="badge badge-red">신규 번역 필요</span>';
+}
+
+function langStatusBadge(status) {
+  if (status === '재사용 가능') return '<span class="badge badge-green">재사용 가능</span>';
+  if (status === '참고 가능')   return '<span class="badge badge-amber">참고 가능</span>';
+  return '<span class="badge badge-red">신규 번역 필요</span>';
+}
+
+function reasonBadge(r) {
+  return '<span class="badge badge-gray">' + esc(r) + '</span>';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── 언어별 셀 HTML ───────────────────────────────────────────────────────────
+function langCells(row, isCard) {
+  const targets = LANGS.filter(l => l.code !== baseLang);
+  return targets.map(lang => {
+    const value = row.match?.[lang.code] || '';
+    const st = langStatus(value, row.status);
+    const canCopy = st === '재사용 가능';
+    const copyHtml = canCopy
+      ? `<button class="copy-btn" onclick="copyValue(event,'${esc(value)}',this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사</button>`
+      : '';
+    if (isCard) {
+      return `<div class="lang-cell">
+        <div class="lang-cell-top"><span class="lang-code">${lang.code}</span>${langStatusBadge(st)}</div>
+        <div class="lang-value">${value ? esc(value) : '<span style="color:var(--text3)">-</span>'}</div>
+        ${copyHtml}
+      </div>`;
+    } else {
+      return `<td><div class="lang-value" style="margin-bottom:6px">${value ? esc(value) : '<span style="color:var(--text3)">-</span>'}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${langStatusBadge(st)} ${copyHtml}</div>
+      </td>`;
+    }
+  }).join('');
+}
+
+// ─── 인라인 상세 HTML ─────────────────────────────────────────────────────────
+function inlineDetailHtml(row) {
+  const reasons = (row.reasons || []).map(reasonBadge).join('');
+  const keyHtml = row.match?.key
+    ? `<span style="font-size:11px;color:var(--text3);margin-left:4px">키: <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:10.5px">${esc(row.match.key)}</code></span>`
+    : '';
+  return `<div class="card-detail-footer">
+    ${reasons || reasonBadge('일치 후보 없음')}
+    ${keyHtml}
+  </div>`;
+}
+
+// ─── 결과 카드 HTML ───────────────────────────────────────────────────────────
+function resultCardHtml(row, showQueryText) {
+  const sel = selectedId === row.id;
+  const detail = sel ? inlineDetailHtml(row) : '';
+  const queryLine = showQueryText && row.queryText && row.queryText !== row.text
+    ? `<div class="card-query-text">검색어: ${esc(row.queryText)}</div>` : '';
+  const srcList = row.sources?.length
+    ? row.sources
+    : (row.match?.source ? [String(row.match.source)] : []);
+  const sourceTagsHtml = srcList.length
+    ? `<div class="source-tags">${srcList.map(s => `<span class="source-tag">${esc(s)}</span>`).join('')}</div>`
+    : '';
+  return `<div class="result-card${sel ? ' selected' : ''}" onclick="toggleSelect('${row.id}')">
+    <div class="card-header">
+      <div>
+        <div class="card-original-label">원문</div>
+        <div class="card-original-text">${esc(row.text)}</div>
+        ${sourceTagsHtml}
+        ${queryLine}
+      </div>
+      ${statusBadge(row.status)}
+    </div>
+    <div class="lang-grid">${langCells(row, true)}</div>
+    ${detail}
+  </div>`;
+}
+
+// ─── Single 렌더 ─────────────────────────────────────────────────────────────
+function renderSingle() {
+  const input = document.getElementById('single-input').value.trim();
+  const container = document.getElementById('single-results');
+  if (!input) {
+    container.innerHTML = '<div class="empty"></div>';
+    return;
+  }
+  const candidates = getAllCandidates(input, baseLang);
+  if (!candidates.length) {
+    const row = { id: 'single-new', text: input, queryText: input, status: '신규 번역 필요', match: null, score: 0, reasons: ['일치 후보 없음'] };
+    container.innerHTML = resultCardHtml(row, false);
+    return;
+  }
+  // 번역 결과(en/zh-TW/ja)가 동일한 항목은 하나로 묶어 source 목록을 합산
+  const targetLangs = LANGS.filter(l => l.code !== baseLang);
+  const groups = new Map();
+  candidates.forEach((c, i) => {
+    const dedupeKey = targetLangs.map(l => String(c.item[l.code] || '')).join('||');
+    if (!groups.has(dedupeKey)) {
+      groups.set(dedupeKey, { c, sources: [], idx: i });
+    }
+    const g = groups.get(dedupeKey);
+    const src = String(c.item.source || '');
+    if (src && !g.sources.includes(src)) g.sources.push(src);
+    if (c.score > g.c.score) { g.c = c; }
+  });
+  const rows = [...groups.values()].map(g => ({
+    id: 'single-' + g.idx,
+    text: g.c.item[baseLang] || input,
+    queryText: input,
+    status: g.c.status,
+    match: g.c.item,
+    score: g.c.score,
+    reasons: g.c.reasons,
+    sources: g.sources,
+  }));
+  container.innerHTML = rows.map(r => resultCardHtml(r, true)).join('');
+}
+
+// ─── Batch 렌더 ──────────────────────────────────────────────────────────────
+function renderBatch() {
+  const text = document.getElementById('batch-input').value;
+  const parsed = parseBatch(text);
+
+  batchRows = parsed.map(inputRow => {
+    const best = findBest(inputRow.text, baseLang);
+    return {
+      id: 'batch-' + inputRow.id,
+      text: inputRow.text,
+      queryText: inputRow.text,
+      contentType: isSentence(inputRow.text) ? 'sentence' : 'term',
+      status: best ? best.status : '신규 번역 필요',
+      match: best?.item || null,
+      score: best?.score || 0,
+      reasons: best?.reasons || ['일치 후보 없음'],
+      metaIndex: inputRow.id,
+    };
+  }).sort((a, b) => {
+    const o = { '재사용 가능': 0, '참고 가능': 1, '신규 번역 필요': 2 };
+    return o[a.status] - o[b.status];
+  });
+
+
+  // 요약
+  const total = batchRows.length;
+  const reusable = batchRows.filter(r => r.status === '재사용 가능').length;
+  const reference = batchRows.filter(r => r.status === '참고 가능').length;
+  const newCount = batchRows.filter(r => r.status === '신규 번역 필요').length;
+
+  document.getElementById('batch-summary').innerHTML = total > 0
+    ? `<div class="summary-grid">
+        <div class="summary-card total"><div class="summary-label">총 항목</div><div class="summary-num">${total}</div></div>
+        <div class="summary-card reusable"><div class="summary-label">재사용 가능</div><div class="summary-num">${reusable}</div></div>
+        <div class="summary-card reference"><div class="summary-label">참고 가능</div><div class="summary-num">${reference}</div></div>
+        <div class="summary-card new"><div class="summary-label">신규 필요</div><div class="summary-num">${newCount}</div></div>
+      </div>` : '';
+
+  document.getElementById('csv-btn').disabled = !total;
+  document.getElementById('batch-results-section').style.display = total > 0 ? '' : 'none';
+
+  renderFilteredBatch();
+}
+
+function renderFilteredBatch() {
+  let filtered = batchRows;
+  if (globalFilter === 'usable') filtered = batchRows.filter(r => isFullyUsable(r, baseLang));
+  if (globalFilter === 'needs')  filtered = batchRows.filter(r => !isFullyUsable(r, baseLang));
+
+  const terms = filtered.filter(r => r.contentType === 'term');
+  const sentences = filtered.filter(r => r.contentType === 'sentence');
+
+  document.getElementById('term-count').textContent = terms.length + '건';
+  document.getElementById('sentence-count').textContent = sentences.length + '건';
+
+  // 단어/라벨 테이블
+  const targets = LANGS.filter(l => l.code !== baseLang);
+  const termContainer = document.getElementById('term-results');
+  if (!terms.length) {
+    termContainer.innerHTML = '<div class="empty">조건에 맞는 단어/라벨 결과가 없습니다.</div>';
+  } else {
+    const thLangs = targets.map(l => `<th class="col-lang">${l.label}</th>`).join('');
+    const rows = terms.map((row, i) => {
+      const sel = selectedId === row.id;
+      const detailRow = sel
+        ? `<tr class="table-detail-row"><td colspan="${2 + targets.length}"><div class="table-detail-inner">${inlineDetailHtml(row)}</div></td></tr>`
+        : '';
+      const src = row.sources?.length
+        ? row.sources.map(s => `<span class="source-tag">${esc(s)}</span>`).join('')
+        : (row.match?.source ? `<span class="source-tag">${esc(row.match.source)}</span>` : '');
+      return `<tr class="${sel ? 'selected' : ''}" onclick="toggleSelect('${row.id}')">
+        <td style="color:var(--text3)">${i + 1}</td>
+        <td><strong>${esc(row.text)}</strong>${src ? `<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${src}</div>` : ''}</td>
+        ${langCells(row, false)}
+      </tr>${detailRow}`;
+    }).join('');
+    termContainer.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th class="col-no">No.</th><th class="col-orig">원문</th>${thLangs}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+
+  // 문장/메시지 카드
+  const sentenceContainer = document.getElementById('sentence-results');
+  sentenceContainer.innerHTML = sentences.length
+    ? sentences.map(r => resultCardHtml(r, true)).join('')
+    : '<div class="empty">조건에 맞는 문장/메시지 결과가 없습니다.</div>';
+}
+
+// ─── 이벤트 핸들러 ────────────────────────────────────────────────────────────
+function switchMode(m) {
+  mode = m;
+  selectedId = null;
+  document.getElementById('single-panel').style.display = m === 'single' ? '' : 'none';
+  document.getElementById('batch-panel').style.display = m === 'batch' ? '' : 'none';
+  document.getElementById('tab-single').classList.toggle('active', m === 'single');
+  document.getElementById('tab-batch').classList.toggle('active', m === 'batch');
+}
+
+function onLangChange() {
+  baseLang = document.getElementById('base-lang').value;
+  selectedId = null;
+  if (mode === 'single') renderSingle();
+  else renderBatch();
+}
+
+function setFilter(f) {
+  globalFilter = f;
+  selectedId = null;
+  ['all', 'usable', 'needs'].forEach(name => {
+    document.getElementById('filter-' + name).classList.toggle('active', name === f);
+  });
+  renderFilteredBatch();
+}
+
+function toggleSelect(id) {
+  selectedId = selectedId === id ? null : id;
+  if (mode === 'single') renderSingle();
+  else renderFilteredBatch();
+}
+
+// ─── 복사 ─────────────────────────────────────────────────────────────────────
+function copyValue(event, value, btn) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(value).then(() => {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>복사됨';
+    btn.classList.add('copied');
+    showToast('복사했습니다');
+    setTimeout(() => { btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사'; btn.classList.remove('copied'); }, 1500);
+  }).catch(console.error);
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function toggleSearchIcon(input) {
+  const icon = input.closest('.search-wrap')?.querySelector('.search-icon');
+  if (!icon) return;
+  const hasText = input.value.length > 0;
+  icon.classList.toggle('has-text', hasText);
+  icon.innerHTML = hasText
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>`;
+}
+
+function clearSearch() {
+  const input = document.getElementById('single-input');
+  if (!input.value) return;
+  input.value = '';
+  toggleSearchIcon(input);
+  renderSingle();
+  input.focus();
+}
+
+// ─── 기준 데이터 localStorage 관리 ──────────────────────────────────────────
+const LS_KEY = 'l10n_match_ref_data';
+const LS_NAME_KEY = 'l10n_match_ref_name';
+
+function saveRefData(rows, filename) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(rows));
+    localStorage.setItem(LS_NAME_KEY, filename);
+  } catch (e) {
+    // 용량 초과 등 저장 실패 시 조용히 처리
+    console.warn('localStorage 저장 실패:', e);
+  }
+}
+
+function loadRefData() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    const name  = localStorage.getItem(LS_NAME_KEY) || '';
+    if (saved) {
+      const rows = JSON.parse(saved);
+      if (Array.isArray(rows) && rows.length > 0) return { rows, name };
+    }
+  } catch (e) {
+    console.warn('localStorage 로드 실패:', e);
+  }
+  return null;
+}
+
+function updateRefStatus(name, count) {
+  const status = document.getElementById('ref-status');
+  const bar = document.getElementById('ref-bar');
+  if (count > 0) {
+    status.textContent = '기준 데이터 · ' + count + '건';
+    bar.classList.add('ref-bar-custom');
+  } else {
+    status.textContent = '기준 데이터 로드 중...';
+    bar.classList.remove('ref-bar-custom');
+  }
+}
+
+// 업로드 파일의 언어 컬럼명을 앱 내부 코드로 정규화
+// 예: ko-kr / ko_kr / KO → ko,  en-sg / en-us → en,  zh-tw / zh_TW → zh-TW,  ja-jp → ja
+function normalizeLangHeader(h) {
+  const l = h.toLowerCase().replace(/[_\s]/g, '-');
+  if (l === 'ko' || l.startsWith('ko-')) return 'ko';
+  if (l === 'en' || l.startsWith('en-')) return 'en';
+  if (l === 'zh-tw' || l === 'zhtw' || l.startsWith('zh-')) return 'zh-TW';
+  if (l === 'ja' || l.startsWith('ja-')) return 'ja';
+  return h.toLowerCase(); // 언어 코드가 아닌 컬럼(key, type, source 등)도 소문자로
+}
+
+// 엑셀/CSV에서 기준 데이터 파싱
+function parseRefRows(raw) {
+  // 첫 행을 헤더로 사용
+  if (!Array.isArray(raw) || raw.length < 2) return [];
+  const header = raw[0].map(h => normalizeLangHeader(String(h || '').trim()));
+  return raw.slice(1).map(row => {
+    const obj = {};
+    header.forEach((h, i) => { obj[h] = String(row[i] ?? '').trim(); });
+    // key가 없으면 건너뜀
+    if (!obj['key']) return null;
+    return obj;
+  }).filter(Boolean);
+}
+
+
+// ─── 서버에서 기준 데이터 자동 로드 (GitHub Pages용) ──────────────────────────
+const REF_FILENAME = 'l10n_reference_merged.xlsx';
+
+async function autoLoadRefFromServer() {
+  try {
+    const res = await fetch('./' + REF_FILENAME);
+    if (!res.ok) return false;
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+    const rows = parseRefRows(raw);
+    if (!rows.length) return false;
+    DATA = rows;
+    activeSource = null;
+    saveRefData(rows, REF_FILENAME);
+    updateRefStatus(REF_FILENAME, rows.length);
+    renderSourceFilters();
+    renderSingle();
+    renderBatch();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ─── 초기 렌더 ────────────────────────────────────────────────────────────────
+// http(s)에서 열리면 서버 xlsx 자동 로드, 로컬에서는 localStorage 사용
+(async function initRefData() {
+  const isServed = location.protocol.startsWith('http');
+  if (isServed) {
+    // GitHub Pages 등 서버 환경: 항상 최신 파일 fetch
+    const loaded = await autoLoadRefFromServer();
+    if (!loaded) {
+      // fetch 실패 시 localStorage 폴백
+      const saved = loadRefData();
+      if (saved) {
+        DATA = saved.rows;
+        updateRefStatus(saved.name, saved.rows.length);
+      } else {
+        updateRefStatus('', 0);
+      }
+      renderSourceFilters();
+      renderSingle();
+      renderBatch();
+    }
+  } else {
+    // 로컬 파일 환경: localStorage 사용
+    const saved = loadRefData();
+    if (saved) {
+      DATA = saved.rows;
+      updateRefStatus(saved.name, saved.rows.length);
+    } else {
+      updateRefStatus('', 0);
+    }
+    renderSourceFilters();
+    renderSingle();
+    renderBatch();
+  }
+})();
+</script>
+
+
+</body></html>
