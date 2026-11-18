@@ -547,13 +547,18 @@ function bigramJaccard(a, b) {
 }
 
 // ─── IP 소스 필터 ────────────────────────────────────────────────────────────
+// source 칸에 "리니지클래식, 시세&사전"처럼 쉼표로 여러 IP를 적으면 각 필터에 모두 포함됨
+function splitSources(value) {
+  return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
 function getFilteredData() {
   if (!activeSource) return DATA;
-  return DATA.filter(item => String(item.source || '') === activeSource);
+  return DATA.filter(item => splitSources(item.source).includes(activeSource));
 }
 
 function renderSourceFilters() {
-  const sources = [...new Set(DATA.map(item => String(item.source || '')).filter(Boolean))].sort();
+  const sources = [...new Set(DATA.flatMap(item => splitSources(item.source)))].sort();
   const wrap = document.getElementById('source-filter-wrap');
   const group = document.getElementById('source-filter-group');
   if (sources.length <= 1) {
@@ -859,7 +864,7 @@ function resultCardHtml(row, showQueryText) {
     ? `<div class="card-query-text">검색어: ${esc(row.queryText)}</div>` : '';
   const srcList = row.sources?.length
     ? row.sources
-    : (row.match?.source ? [String(row.match.source)] : []);
+    : splitSources(row.match?.source);
   const sourceTagsHtml = srcList.length
     ? `<div class="source-tags">${srcList.map(s => `<span class="source-tag">${esc(s)}</span>`).join('')}</div>`
     : '';
@@ -901,8 +906,9 @@ function renderSingle() {
       groups.set(dedupeKey, { c, sources: [], idx: i });
     }
     const g = groups.get(dedupeKey);
-    const src = String(c.item.source || '');
-    if (src && !g.sources.includes(src)) g.sources.push(src);
+    splitSources(c.item.source).forEach(src => {
+      if (!g.sources.includes(src)) g.sources.push(src);
+    });
     if (c.score > g.c.score) { g.c = c; }
   });
   const rows = [...groups.values()].map(g => ({
@@ -987,7 +993,7 @@ function renderFilteredBatch() {
         : '';
       const src = row.sources?.length
         ? row.sources.map(s => `<span class="source-tag">${esc(s)}</span>`).join('')
-        : (row.match?.source ? `<span class="source-tag">${esc(row.match.source)}</span>` : '');
+        : splitSources(row.match?.source).map(s => `<span class="source-tag">${esc(s)}</span>`).join('');
       return `<tr class="${sel ? 'selected' : ''}" onclick="toggleSelect('${row.id}')">
         <td style="color:var(--text3)">${i + 1}</td>
         <td><strong>${esc(row.text)}</strong>${src ? `<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${src}</div>` : ''}</td>
